@@ -15,11 +15,6 @@ namespace FixWithCustomSerialization.Services
             MongoClient client = new MongoClient(mongoDBSettings.Value.ConnectionURI);
             IMongoDatabase database = client.GetDatabase(mongoDBSettings.Value.DatabaseName);
             _mediaCollection = database.GetCollection<MediaFile>(mongoDBSettings.Value.CollectionName);
-
-            var options = new CreateIndexOptions() { Unique = true };
-            var field = new StringFieldDefinition<MediaFile>("Name");
-            var indexDefinition = new IndexKeysDefinitionBuilder<MediaFile>().Ascending(field);
-            _mediaCollection.Indexes.CreateOneAsync(indexDefinition, options);
         }
 
         public async Task<MediaFile?> GetMediaAsync(string id)

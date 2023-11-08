@@ -1,12 +1,13 @@
 ﻿using FixWithCustomSerialization.Services;
 using Microsoft.AspNetCore.Mvc;
+using MongoDB.Bson.Serialization.Attributes;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace FixWithCustomSerialization.Controllers;
 
 [ApiController]
-[Route("[controller]")]
+[Route("api")]
 public class MediaController : ControllerBase
 {
     private readonly ILogger<MediaController> _logger;
@@ -19,6 +20,7 @@ public class MediaController : ControllerBase
     }
 
     [HttpPost]
+    [Route("upload")]
     public async Task<IActionResult> UpdateMedia([FromBody] MediaFile media)
     {
 
@@ -55,26 +57,15 @@ public class MediaController : ControllerBase
 
 /// </summary>
 /// 
-[JsonConverter(typeof(MediaFileJsonConverter))]
-public class MediaFileJsonConverter : JsonConverter<MediaFile>
+public class MediaFileJsonConverter : JsonConverter<MediaFile?>
 {
     public override MediaFile Read(
-        ref Utf8JsonReader reader,
-        Type typeToConvert,
-        JsonSerializerOptions options)
+            ref Utf8JsonReader reader,
+            Type typeToConvert,
+            JsonSerializerOptions options)
     {
 
         if (reader.TokenType != JsonTokenType.StartObject)
-        {
-            throw new JsonException();
-        }
-
-        if (reader.TokenType != JsonTokenType.PropertyName)
-        {
-            throw new JsonException();
-        }
-
-        if (reader.TokenType != JsonTokenType.Number)
         {
             throw new JsonException();
         }
@@ -140,14 +131,14 @@ public class MediaFileJsonConverter : JsonConverter<MediaFile>
 
     }
 
-    public override void Write(Utf8JsonWriter writer, MediaFile mediaFile, JsonSerializerOptions options)
+    public override void Write(Utf8JsonWriter writer, MediaFile? mediaFile, JsonSerializerOptions options)
     {
         var serverUrl = "localhost:5290";
         writer.WriteStartObject();
 
-        writer.WriteString("Name", mediaFile.Name);
+        writer.WriteString("Name", mediaFile?.Name);
 
-        var PublicUrl = serverUrl + "\\Files\\" + mediaFile;
+        var PublicUrl = serverUrl + "/Files/" + mediaFile?.Name;
 
         writer.WriteString("PublicUrl", PublicUrl);
 
@@ -155,11 +146,15 @@ public class MediaFileJsonConverter : JsonConverter<MediaFile>
     }
 }
 
+[JsonConverter(typeof(MediaFileJsonConverter))]
+[BsonIgnoreExtraElements]
+
 public class MediaFile
 {
     /// <summary>
     /// todo: We want media name to be Unique, Please enforce using MongoDb Unique Index
     /// </summary>
+    
     public string Name { get; set; } = "";
 
     /// <summary>
